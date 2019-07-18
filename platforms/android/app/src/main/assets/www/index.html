@@ -32,40 +32,24 @@
             </div><!-- /header -->        
         
             <div role="main" class="ui-content">
-                <button class="ui-btn" data-bind="click: showExpenses">Show</button>
-                
-                <div data-role="collapsible-set" id="inputset">    
-                    <div id="expenseip"data-role="collapsible" data-collapsed="true" data-theme="b" data-content-theme="a">
-                            <h4 >Add Expense</h4>
-                            <p>Shop :<input data-bind="textInput: shopid" /></p>
-                            <p>Desc :<input data-bind="textInput: descip" /></p>
-                            <div class="ui-grid-a">
-                                <div class="ui-block-a date"> <p>When :
-                                     <input class="form-control" type="text"  data-bind="textInput: whenPurchasedip" data-role="datebox"  data-datebox-mode="calbox" id="db1" readonly>
-                                </p></div>
-                                <div class="ui-block-b"><p>Total :
-                                    <input type="number" data-bind="textInput: totalip" />
-                                </p></div>
-                            
-                            </div>
-                           
-                            <hr/>
-                            <button data-bind="click: addExpense">Add</button>
-                    </div>
-                </div>
-                
+                <!-- <button class="ui-btn" data-bind="click: showExpenses">Show</button> -->
+                <button class="ui-btn" data-bind="click: goToExpensePage">Add Expense</button>
+                                         
                 <div data-role="collapsible-set" id="expenseset">
                        
                     <div data-bind="foreach: expenses">
                         <div data-role="collapsible" data-collapsed="true" data-theme="b" data-content-theme="a">
                             <h4 data-bind="text: shop "></h4>
+                            <p>Description</p>
                             <p><span data-bind="text: desc "></span></p>
                             <div class="ui-grid-a">
-                                <div class="ui-block-a"> <p><span data-bind="text: whenPurchased"></span></p></div>
-                                <div class="ui-block-b"><p><span data-bind="text: total"></span></p></div>
-                            </div>                       
+                                <div class="ui-block-a"><p>Date&nbsp;<span data-bind="text: whenPurchased"></span></p></div>
+                                <div class="ui-block-b"><p>Total&nbsp;<span data-bind="text: total"></span></p></div>
+                            </div>
+                                                
                             <button data-bind="click: $parent.removeExpense">Remove</button>
                             <button data-bind="click: $parent.editExpense">Edit</button>
+                            
                             <hr/>
                         </div>
                     </div>
@@ -74,7 +58,7 @@
             </div><!-- /content -->
         
             <div data-role="footer" data-position="fixed">
-                <h4>Home</h4>
+                
                 <div data-role="navbar">
                     <ul>
                         <li><a href="#page1">Home</a></li>
@@ -125,54 +109,15 @@
         </div><!-- /page -->
         
         <div data-role="page"  data-theme="b" id="page3">
-
-                <div data-role="header" data-position="fixed">
-                    <h1>Results</h1>
-                </div><!-- /header -->
-            
-                <div role="main" class="ui-content">
-                    <p>Name :<span data-bind="text: personName"></span></p>
-                    <div>
-                    <p data-bind="text: imagePath"></p>
-                    <!-- <p data-bind="text: resultMsg"></p> -->
-                    </div>
-                    <h2>Result from Decoding Text</h2>
-                    <ul data-bind="foreach: resultArr">
-                        <li>
-                            <p>
-                            <span data-bind="text: $data.text"></span> top:
-                            <span data-bind="text: $data.tb"></span> left:
-                            <span data-bind="text: $data.lr"></span>                      
-                        
-                        </p>
-                        </li>
-                    </ul>                
-                       
-                </div><!-- /content -->
-            
-                <div data-role="footer" data-position="fixed">
-                    <h4>Text</h4>
-                    <div data-role="navbar">
-                        <ul>
-                            <li><a href="#page1">Home</a></li>
-                            <li><a href="#page2">Camera</a></li>
-                            <li><a href="#page3">Result</a></li>
-                            <li><a href="#page4">Data</a></li>
-                        </ul>
-                    </div> 
-                </div><!-- /footer -->
-            </div><!-- /page -->
-
-            <div data-role="page"  data-theme="b" id="page4">
-                <div data-role="header" data-position="fixed">
-                    <h1>Edit</h1>
-                </div><!-- /header -->
+            <div data-role="header" data-position="fixed">
+                <h1>Edit</h1>
+            </div><!-- /header -->
             
                 <div role="main" class="ui-content">
 
                         <div data-role="collapsible-set" id="photoset">    
-                                <div id="photoip"data-role="collapsible" data-collapsed="true" data-theme="b" data-content-theme="a">
-                                        <h4 >Photo Expense</h4>
+                                <div id="photoip"data-role="collapsible" data-collapsed="false" data-theme="b" data-content-theme="a">
+                                        <h4 >Expense</h4>
                                         <p>Shop :<input data-bind="textInput: editShop" /></p>
                                         <p>Desc :<textarea data-bind="textInput: editDesc" ></textarea></p>
                                         <div class="ui-grid-a">
@@ -182,11 +127,19 @@
                                             <div class="ui-block-b"><p>Total :
                                                 <input type="number" data-bind="textInput: editTotal" />
                                             </p></div>
+                                            <input type="text" name="id" data-bind="textInput: editId"/> 
                                         
                                         </div>
                                        
                                         <hr/>
-                                        <button data-bind="click: addExpense">Add</button>
+                                        <div data-bind="visible:canAdd">
+                                            <button data-bind="click: addExpense">Add</button>
+                                        </div>
+                                        <div data-bind="visible:canUpdate">
+                                            <button data-bind="click: patchExpense">Update</button>
+                                        </div>
+                                        
+                                       
                                 </div>
                             </div>
                                     
@@ -203,6 +156,43 @@
                     </div> 
                 </div><!-- /footer -->
             </div><!-- /page -->
+            <div data-role="page"  data-theme="b" id="page4">
+
+                <div data-role="header" data-position="fixed">
+                    <h1>Results</h1>
+                </div><!-- /header -->
+            
+                <div role="main" class="ui-content">
+                    <p>Name :<span data-bind="text: personName"></span></p>
+                    <div>
+                    <p data-bind="text: imagePath"></p>
+                    <!-- <p data-bind="text: resultMsg"></p> -->
+                    </div>
+                    <h2>Result from Decoding Text</h2>
+                    <ul data-bind="foreach: resultArr">
+                        <li>
+                        <p>
+                            <span data-bind="text: $data.text"></span> x:
+                            <span data-bind="text: $data.x"></span> y:
+                            <span data-bind="text: $data.y"></span>                       
+                        </p>
+                        </li>
+                    </ul>                
+                        
+                </div><!-- /content -->
+        
+                <div data-role="footer" data-position="fixed">
+                    <h4>Text</h4>
+                    <div data-role="navbar">
+                        <ul>
+                            <li><a href="#page1">Home</a></li>
+                            <li><a href="#page2">Camera</a></li>
+                            <li><a href="#page3">Result</a></li>
+                            <li><a href="#page4">Data</a></li>
+                        </ul>
+                    </div> 
+                </div><!-- /footer -->
+        </div><!-- /page -->
 
 
 
@@ -212,5 +202,7 @@
         <script type="text/javascript" src="js/external/pouchdb-7.0.0.min.js"></script>
         <script type="text/javascript" src="js/external/pouchdb.find.js"></script>
         <script type="text/javascript" src="js/index.js"></script>
+        <script type="text/javascript" src="js/ocr.js"></script>
+        <script type="text/javascript" src="js/db.js"></script>
     </body>
 </html>

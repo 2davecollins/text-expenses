@@ -1,26 +1,3 @@
-class Expense {
-
-    constructor(obj) {
-        this._id = generateUUID();
-        this.shop = obj.shop;
-        this.desc = obj.desc;
-        this.whenPurchased = obj.whenPurchased;
-        this.total = obj.total;
-        this.uploaded = false;
-    }
-    get expenseId() {
-        return this._id;
-    }
-    get expenseUpLoaded (){
-        return this.uploaded;
-    }
-           
-}
-
-
-var db;
-var remoteCouch;
-
 var app = {
     // Application Constructor
     initialize: function() {
@@ -42,20 +19,19 @@ var app = {
            $('#db1', window.parent.document).get(0).scrollIntoView();
         
        });
+       $(document).on("pageshow","#page1", function(){
+        console.log("Page1 show")
+        myViewModel.canAdd(true);
+        myViewModel.canUpdate(false);
+    });
 
-       cameraCleanup();
-
-    //    $.datepicker.setDefaults({
-    //     showOn: "both",
-    //     buttonImageOnly: true,
-    //     buttonImage: "calendar.gif",
-    //     buttonText: "Calendar"
-    //   });
-    //   $.datepicker.formatDate( "yy-mm-dd", new Date( 2007, 1 - 1, 26 ) );
+       cameraCleanup();  
     },       
 };
 
 app.initialize();
+
+
 
 var myViewModel = {    
     personName: ko.observable('Dave'),
@@ -74,29 +50,28 @@ var myViewModel = {
     editDesc: ko.observableArray([]),
     editTotal: ko.observable(''),
     editDate : ko.observable(''),
+    editId: ko.observable(0),
+    editExp: ko.observable(''),
     editExpenses: ko.observableArray([]),
+    canUpdate: ko.observable(false),
+    canAdd:ko.observable(true),
 
 
-    takePicture : function() {       
-       
+    takePicture : function() {
+        //use camera       
         takePhotograph();
     },
     retrievePicture : function(){
+        //use gallery
         retrievePhotograph();
     },
     readPicture : function(){
+        //retrive data from photograph
         decodeText();
         //readPhotograph()
     },
    
-    resetExpenseIP : function(){
-        const x = this.idip()
-        this.idip(x),
-        this.shopid(''),
-        this.descip(''),
-        this.whenPurchasedip(''),
-        this.totalip('')
-    },
+    
     resetPhotoExpense : function(){
         const x = this.idip()
         this.idip(x),
@@ -110,92 +85,41 @@ var myViewModel = {
     addExpense : function(){         
         addNewExpense ();    
     },
-    editExpense : function(el){
-        //console.log(el)
-       // editDisplay(el);
-       findInDB("Tesco");
+    patchExpense: function(){
+        //addNewExpense ();
+        const exp =  myViewModel.editExp();
+        updateExpense(exp)        
        
+
+    },
+ 
+    editExpense : function(el){
+        console.log(el);
+        if(el){
+            editDisplay(el);
+            myViewModel.canUpdate(true);
+            myViewModel.canAdd(false);    
+            $.mobile.navigate("#page3");
+        }       
     },
     removeExpense : function(el){
+        
         console.log(el);
-       
+        console.log("-------------")     
         deleteExpense(el)
-        showAllExpenses()
+       
     },
     showExpenses : function(){
         showAllExpenses();
+    },
+    goToExpensePage : function(){
+        myViewModel.canUpdate(false);
+        myViewModel.canAdd(true);  
+        $.mobile.navigate("#page3");
     }
 };
 
-//pouchdb
-function showAllExpenses() {
-    myViewModel.expenses([]);
-    db.allDocs({
-        include_docs: true,
-        attachments: true
-      }).then(function (result) {
-        // handle result
-        let res = result.rows;        
-        res.forEach(function (item){
-            myViewModel.expenses.push(item.doc);
-        })
-        
-      }).then(function(){
-        console.log("Refreshing List");
-        refreshList()
-      }).catch(function (err) {
-        console.log(err);
-      });
-}
 
-function addExpenceDB(expenceobj) {
-    
-    db.put(expenceobj, function callback(err, result) {
-      if (!err) {
-        console.log('Successfully posted a expense!');
-      }
-    });
-}
-
-function deleteExpense(expense) {
-    db.remove(expense);
-}
-
-function updateExpense(expense){
-    db.get('expense').then(function(doc) {
-        return db.put({
-          _id: 'expense',
-          _rev: doc._rev,
-          title: "Let's Dance"
-        });
-      }).then(function(response) {
-        // handle response
-      }).catch(function (err) {
-        console.log(err);
-      });
-}
-
-function findInDB (datatofind){
-
-    db.find({
-        selector: {shop: {$eq: datatofind}}
-      }).then(function (result) {
-        // handle result
-        console.log(result)
-      }).catch(function (err) {
-        console.log(err);
-      });
-}
-
-function deteteDB (){
-
-    db.destroy().then(function (response) {
-        // success
-        console.log(response)
-      }).catch(function (err) {
-        console.log(err);
-      });
-}
 
 function takePhotograph(){
 
@@ -286,248 +210,53 @@ function setOptions(srcType) {
     return options;
 }
 
-function decodeText(){
-    const img = myViewModel.imagePath();
-    textocr.recText(0,img, onSuccess, onFail)
-
-    function onSuccess(recognisedText){
-        console.log(recognisedText.lines);
-    }
-    function onFail(message){
-        console.log(message);
-    }
-
-
-
-
-}
-
-function readPhotograph(){
-
-    const img = myViewModel.imagePath();
-    let tempLine = [];
-    let tempElement = []
-    let dateArr = []
-    let totalArr = []
-    let priceArr = []
- 
-    MlKitPlugin.getText(img,{},function onSuccess(data) { 
-        
-                 
-        const r = data.text;
-        dateArr = findDate(r)
-        console.log(dateArr)
-        totalArr = findTotal(r);
-        console.log(totalArr);
-        console.log(checkContainsTotal(r));
-        priceArr = checkContainsPrice(r);
-        console.log(priceArr);
-
-        //Create an array of text objects in eacl line of returned data
-        
-        for (var block of data.textBlocks){
-             for (var line of block.lines){
-                 tempLine.push(line)                
-             }
-        }
-        // array is returned in no set order
-        // sort array depending on center of bounding box top to bottom
-        // sort array from left to right 
-        tempLine = sortArray(tempLine);
-        // TODO confirm or check if another way to do this
-        // assumption the first element in the array is text represending the shop
-        // where receipt is from
-        myViewModel.editShop(tempLine[0].text)
-        // dateArray contains array of regular expressions for date found in text
-        // maybe set todays date if null or no date found 
-        myViewModel.editDate(dateArr[0]);
-
-        // used to show the returned recognised text
-
-        myViewModel.resultArr(tempLine)
-
-        
-        
-        let displayList = groupByLine(tempLine)       
-        let stdisplay = '';
-        let totalP = '';
-        let strDisolayFiltered = '';            
-        for (var itd in displayList){
-             displayList[itd].forEach(function (e){               
-                    stdisplay += e.text+" ";                              
-            })
-            stdisplay += "\n";
-        }
-
-        // filter the display and show only items that contain price
-
-        let strArr = stdisplay.split("\n")
-        strArr.forEach( function(item, index){
-            if(checkContainsPrice(item)){
-                strDisolayFiltered += item;
-                console.log(item);    
-                strDisolayFiltered += "\n";
-                if(checkContainsTotal(item)){
-                    totalP = item;
-                }             
-            }           
-        })
-        myViewModel.editTotal(getPriceFromTotal(totalP));
-        myViewModel.editDesc(strDisolayFiltered);
-
-        },
-     
-    function onFail(err) {
-         console.log(err)
-    });    
-}
-
-function sortArray(myA){
-    // add to object tb top bottom average set to flor
-    // add to object lr the left side of bounding box
-    // sort array from top to bottom left to right
-    myA.map(o => { o.tb = Math.floor((o.boundingBox.top + o.boundingBox.bottom)/200); return o}); 
-    myA.map(o => { o.lr = o.boundingBox.left; return o});
-    myA.sort(function(a,b){
-        return a['tb'] - b['tb'] || a['lr'] - b['lr'];
-    })
-    return myA;
-}
-
-function groupByLine(myA){
-    // group array to combine elements on the same line
-    let verticalArr = myA.reduce((r, a) => {      
-        r[a.tb] = [...r[a.tb] || [], a];
-        return r;
-    }, {});
-    return verticalArr; 
-}
-
-//Regular Expressions
-
-function findDate(str){
-        // Regular expression to find date strings in form
-        // dd/mm/yyyy
-        // dd/jan/yyyy
-        // return an array of all dates found
-        // TODO consider format of mm/dd/yy
-
-        let regeditNumbers = /\b\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}\b/ig;
-        let regeditMonths = /(\b\d{1,2}\D{0,3})?(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|(Nov|Dec)(?:ember)?)\D?(\d{1,2}\D?)?\D?((19[7-9]\d|20\d{2})|\d{2})/ig
-        let res1 = []
-        let res2 = []
-        if (regeditNumbers.test(str)){
-            res1 = str.match(regeditNumbers)
-        }if(regeditMonths.test(str)){
-           res2 =str.match(regeditMonths)
-        }
-        return res1.concat(res2)       
-}
-
-
-function findTotal(str){
-
-    // Regular expression to find total may not be needed use checkContainsTotal
-
-    let regeditTotal = /Total?|(Bal(?:ance)?|Cash?\b\d{1,}[.]\d{2} )/ig;
-
-    return str.match(regeditTotal);
-
-}
-
-function checkContainsPrice(str){
-    // Regular expression  find if it contains a price xxx.xx space
-    const regeditPrice = /\d{1,}[.]\d{2}\b/i;
-    return regeditPrice.test(str);
-}
-
-function checkContainsTotal(str){
-    //Regular expression to find if text contains dictionary
-    //Total Bal Cash TODO may be more required
-    let regeditTotal = /Total?|Bal(?:ance)?|Cash?/ig;
-    return regeditTotal.test(str);
-}
-
-function getPriceFromTotal(str){
-    // if line contains Total Bal Cash return the decmial value
-    const regeditPrice = /\d{1,}[.]\d{2}/i;
-    return str.match(regeditPrice);
-}
-
-
-
-function findLargest(myA){
-
-    // not so simple largest textBlock not the largest lettering could cover multiple lines
-    // may be needed if cant use first exement of array as shop
-    const res = Math.max.apply(Math, myA.map(function (o) {
-        return o.s;
-    }))
-    const obj = myA.find(function(o){
-        return o.s == res;
-    })
-    return obj;
-}
-
-
 function setUpExpense (){
     myViewModel.expenses([]);    
 };
 function editDisplay(expense){    
-    myViewModel.shopid(expense.shop),
-    myViewModel.descip(expense.desc),
-    myViewModel.whenPurchasedip(expense.whenPurchased),
-    myViewModel.totalip(expense.total)
+    // myViewModel.shopid(expense.shop),
+    // myViewModel.descip(expense.desc),
+    // myViewModel.whenPurchasedip(expense.whenPurchased),
+    // myViewModel.totalip(expense.total)
+    myViewModel.editExp(expense)
+    myViewModel.editShop(expense.shop),
+    myViewModel.editDesc(expense.desc),
+    myViewModel.editDate(expense.whenPurchased),
+    myViewModel.editTotal(expense.total)
+    
 
 };
-function addPhotoExpense (){
-    let x = myViewModel.idip()
+
+function addNewExpense(){
+    let x = myViewModel.editId()
     x++;
     myViewModel.idip(x)
     const exp = {
-        id:myViewModel.idip(),
+        id:myViewModel.editId(),
         shop:myViewModel.editShop(),
         desc:myViewModel.editDesc(),
         whenPurchased:myViewModel.editDate(),
         total:myViewModel.editTotal()
-    }    
-    addExpenceDB(new Expense(exp))   
-    console.log("photo    llllllll");
+    }
+
+    //let exp1 = new Expense(exp);
+    addExpenceDB(new Expense(exp));
     myViewModel.resetPhotoExpense();
     myViewModel.expenses.push(exp)     
     // $( "#expenseset" ).collapsibleset( "refresh" );
     // $( "#inputset" ).collapsibleset( "refresh" );
     refreshList();
-  
+
 };
 
-function addNewExpense (){
-    let x = myViewModel.idip()
-    x++;
-    myViewModel.idip(x)
-    const exp = {
-        id:myViewModel.idip(),
-        shop:myViewModel.shopid(),
-        desc:myViewModel.descip(),
-        whenPurchased:myViewModel.whenPurchasedip(),
-        total:myViewModel.totalip()
-    }
 
-    //let exp1 = new Expense(exp);
-    addExpenceDB(new Expense(exp))   
-    console.log("lllllllllll    llllllll");
-
-    myViewModel.resetExpenseIP();
-    myViewModel.expenses.push(exp)     
-    // $( "#expenseset" ).collapsibleset( "refresh" );
-    // $( "#inputset" ).collapsibleset( "refresh" );
-    refreshList();
-  
-};
 function refreshList (){
     setTimeout(function(){
        
         $( "#expenseset" ).collapsibleset( "refresh" );
+        myViewModel.canUpdate(false);
+        myViewModel.canAdd(true);  
+        $.mobile.navigate("#page1");
 
     },5);
 }
@@ -549,15 +278,3 @@ function removeSomeExpense(el){
     myViewModel.expenses(newArr);
 }
 
-function generateUUID() { 
-    // Generate a UUID for database
-    var d = new Date().getTime();
-    if (typeof performance !== 'undefined' && typeof performance.now === 'function'){
-        d += performance.now(); //use high-precision timer if available
-    }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        var r = (d + Math.random() * 16) % 16 | 0;
-        d = Math.floor(d / 16);
-        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    });
-}
